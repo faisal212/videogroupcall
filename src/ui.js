@@ -211,6 +211,39 @@ function joinChannel() {
   });
 }
 
+
+var containerId = '#' + streamId + '_container';
+$(containerId).dblclick(function() {
+  // play selected container as full screen - swap out current full screen stream
+  remoteStreams[mainStreamId].stop(); // stop the main video stream playback
+  addRemoteStreamMiniView(remoteStreams[mainStreamId]); // send the main video stream to a container
+  $(containerId).empty().remove(); // remove the stream's miniView container
+  remoteStreams[streamId].stop() // stop the container's video stream playback
+  remoteStreams[streamId].play('full-screen-video'); // play the remote stream as the full screen video
+  mainStreamId = streamId; // set the container stream id as the new main stream id
+});
+
+
+// remove the remote-container when a user leaves the channel
+client.on("peer-leave", function(evt) {
+  var streamId = evt.stream.getId(); // the the stream id
+  if(remoteStreams[streamId] != undefined) {
+    remoteStreams[streamId].stop(); // stop playing the feed
+    delete remoteStreams[streamId]; // remove stream from list
+    if (streamId == mainStreamId) {
+      var streamIds = Object.keys(remoteStreams);
+      var randomId = streamIds[Math.floor(Math.random()*streamIds.length)]; // select from the remaining streams
+      remoteStreams[randomId].stop(); // stop the stream's existing playback
+      var remoteContainerID = '#' + randomId + '_container';
+      $(remoteContainerID).empty().remove(); // remove the stream's miniView container
+      remoteStreams[randomId].play('full-screen-video'); // play the random stream as the main stream
+      mainStreamId = randomId; // set the new main remote stream
+    } else {
+      var remoteContainerID = '#' + streamId + '_container';
+      $(remoteContainerID).empty().remove(); // 
+    }
+  }
+});
 // video streams for channel
 function createCameraStream(uid) {
   var localStream = AgoraRTC.createStream({
@@ -269,35 +302,3 @@ function addRemoteStreamMiniView(remoteStream){
 }
 
 
-var containerId = '#' + streamId + '_container';
-$(containerId).dblclick(function() {
-  // play selected container as full screen - swap out current full screen stream
-  remoteStreams[mainStreamId].stop(); // stop the main video stream playback
-  addRemoteStreamMiniView(remoteStreams[mainStreamId]); // send the main video stream to a container
-  $(containerId).empty().remove(); // remove the stream's miniView container
-  remoteStreams[streamId].stop() // stop the container's video stream playback
-  remoteStreams[streamId].play('full-screen-video'); // play the remote stream as the full screen video
-  mainStreamId = streamId; // set the container stream id as the new main stream id
-});
-
-
-// remove the remote-container when a user leaves the channel
-client.on("peer-leave", function(evt) {
-  var streamId = evt.stream.getId(); // the the stream id
-  if(remoteStreams[streamId] != undefined) {
-    remoteStreams[streamId].stop(); // stop playing the feed
-    delete remoteStreams[streamId]; // remove stream from list
-    if (streamId == mainStreamId) {
-      var streamIds = Object.keys(remoteStreams);
-      var randomId = streamIds[Math.floor(Math.random()*streamIds.length)]; // select from the remaining streams
-      remoteStreams[randomId].stop(); // stop the stream's existing playback
-      var remoteContainerID = '#' + randomId + '_container';
-      $(remoteContainerID).empty().remove(); // remove the stream's miniView container
-      remoteStreams[randomId].play('full-screen-video'); // play the random stream as the main stream
-      mainStreamId = randomId; // set the new main remote stream
-    } else {
-      var remoteContainerID = '#' + streamId + '_container';
-      $(remoteContainerID).empty().remove(); // 
-    }
-  }
-});
